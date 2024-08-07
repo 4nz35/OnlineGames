@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game 1</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a;
+            margin: 0;
+            overflow: hidden;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #gameCanvas {
+            background-color: #000;
+        }
+        .info {
+            margin: 10px;
+            font-size: 1.5em;
+        }
+        .button {
+            margin: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">Score: <span id="score">0</span></div>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <button class="button" id="startButton">Start</button>
+    <button class="button" id="restartButton" style="display: none;">Restart</button>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+
+        const laneWidth = canvas.width / 3;
+        let playerLane = 1; // Start in the middle lane
+        const playerSize = 50;
+        const enemySize = 50;
+        let enemies = [];
+        let enemySpeed = 1;
+        let gameOver = false;
+        let score = 0;
+        let scoreInterval;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') {
+                if (playerLane > 0) playerLane--;
+            } else if (e.key === 'ArrowRight' || e.key === 'd') {
+                if (playerLane < 2) playerLane++;
+            }
+        });
+
+        function drawPlayer() {
+            ctx.fillStyle = 'green';
+            ctx.fillRect(playerLane * laneWidth + laneWidth / 2 - playerSize / 2, canvas.height - playerSize - 10, playerSize, playerSize);
+        }
+
+        function drawEnemies() {
+            ctx.fillStyle = 'red';
+            enemies.forEach(enemy => {
+                ctx.fillRect(enemy.lane * laneWidth + laneWidth / 2 - enemySize / 2, enemy.y, enemySize, enemySize);
+                enemy.y += enemySpeed;
+                if (enemy.y > canvas.height) {
+                    enemy.y = -enemySize;
+                    enemy.lane = Math.floor(Math.random() * 3);
+                    score++;
+                    scoreElement.textContent = score;
+                }
+            });
+        }
+
+        function checkCollisions() {
+            enemies.forEach(enemy => {
+                if (enemy.lane === playerLane && enemy.y + enemySize > canvas.height - playerSize - 10 && enemy.y < canvas.height - 10) {
+                    gameOver = true;
+                }
+            });
+        }
+
+        function update() {
+            if (gameOver) {
+                clearInterval(scoreInterval);
+                ctx.fillStyle = 'white';
+                ctx.font = '48px serif';
+                ctx.fillText('Game Over', canvas.width / 2 - 120, canvas.height / 2);
+                restartButton.style.display = 'block';
+                return;
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPlayer();
+            drawEnemies();
+            checkCollisions();
+            requestAnimationFrame(update);
+        }
+
+        function init() {
+            enemies = [];
+            for (let i = 0; i < 5; i++) {
+                enemies.push({
+                    lane: Math.floor(Math.random() * 3),
+                    y: -enemySize - (Math.random() * canvas.height)
+                });
+            }
+            score = 0;
+            scoreElement.textContent = score;
+            gameOver = false;
+            enemySpeed = 1;
+            update();
+            scoreInterval = setInterval(() => {
+                if (!gameOver) {
+                    enemySpeed += 0.1;
+                }
+            }, 1000);
+        }
+
+        function startGame() {
+            startButton.style.display = 'none';
+            init();
+        }
+
+        function restartGame() {
+            restartButton.style.display = 'none';
+            init();
+        }
+
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', restartGame);
+
+        // Slow down enemy spawning and avoid all three lanes being filled
+        function spawnEnemies() {
+            setInterval(() => {
+                if (!gameOver) {
+                    let newEnemies = [];
+                    let lanes = [0, 1, 2];
+                    let numEnemies = Math.floor(Math.random() * 3) + 1; // 1 to 3 enemies
+
+                    for (let i = 0; i < numEnemies; i++) {
+                        let laneIndex = Math.floor(Math.random() * lanes.length);
+                        newEnemies.push({
+                            lane: lanes.splice(laneIndex, 1)[0],
+                            y: -enemySize
+                        });
+                    }
+                    enemies.push(...newEnemies);
+                }
+            }, 2000); // Spawns new enemies every 2 seconds
+        }
+
+        spawnEnemies();
+    </script>
+</body>
+</html>
