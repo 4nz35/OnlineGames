@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Games</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
 
         body {
-            font-family: 'Fredoka', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #1a1a1a;
             color: #f0f0f0;
             text-align: center;
@@ -17,7 +17,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow: hidden;
         }
 
         h1 {
@@ -25,7 +24,7 @@
             font-size: 3em;
             font-weight: bold;
             color: #ffffff;
-            animation: fadeIn 1s ease-out;
+            font-family: 'Montserrat', sans-serif;
         }
 
         .game-container {
@@ -34,7 +33,6 @@
             gap: 20px;
             margin: 20px;
             width: 80%;
-            animation: fadeIn 2s ease-out;
         }
 
         .game-tile {
@@ -50,7 +48,6 @@
             border-radius: 20px;
             transition: transform 0.3s, box-shadow 0.3s;
             text-decoration: none;
-            animation: bounceIn 1.5s ease-out;
         }
 
         .game-tile:hover {
@@ -125,46 +122,12 @@
         .button:hover {
             background-color: #0056b3;
         }
-
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes bounceIn {
-            0% {
-                transform: scale(0.3);
-            }
-            50% {
-                transform: scale(1.1);
-            }
-            70% {
-                transform: scale(0.9);
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        @keyframes movePlayer {
-            0% {
-                transform: translateX(0);
-            }
-            100% {
-                transform: translateX(100px);
-            }
-        }
     </style>
 </head>
 <body>
     <h1>Games</h1>
     <div class="game-container">
-        <div class="game-tile" id="openGame1">Dodging Block</div>
+        <div class="game-tile" id="openGame1">Game 1</div>
         <div class="game-tile" onclick="alert('Game 2 Coming Soon!')">Game 2</div>
         <div class="game-tile" onclick="alert('Game 3 Coming Soon!')">Game 3</div>
         <div class="game-tile" onclick="alert('Game 4 Coming Soon!')">Game 4</div>
@@ -196,37 +159,18 @@
         const playerSize = 50;
         const enemySize = 50;
         let enemies = [];
-        let enemySpeed = 0.5; // Slower start
+        let enemySpeed = 1;
         let gameOver = false;
         let score = 0;
         let scoreInterval;
-        let spawnInterval;
 
         document.addEventListener('keydown', (e) => {
-            if ((e.key === 'ArrowLeft' || e.key === 'a') && playerLane > 0) {
-                playerLane--;
-                animatePlayer(-laneWidth); // Animate movement to the left
-            } else if ((e.key === 'ArrowRight' || e.key === 'd') && playerLane < 2) {
-                playerLane++;
-                animatePlayer(laneWidth); // Animate movement to the right
+            if (e.key === 'ArrowLeft' || e.key === 'a') {
+                if (playerLane > 0) playerLane--;
+            } else if (e.key === 'ArrowRight' || e.key === 'd') {
+                if (playerLane < 2) playerLane++;
             }
         });
-
-        function animatePlayer(offset) {
-            const player = document.createElement('div');
-            player.style.position = 'absolute';
-            player.style.width = `${playerSize}px`;
-            player.style.height = `${playerSize}px`;
-            player.style.backgroundColor = 'green';
-            player.style.transform = `translateX(${playerLane * laneWidth}px)`;
-            player.style.transition = 'transform 0.3s ease';
-            canvas.parentNode.appendChild(player);
-
-            requestAnimationFrame(() => {
-                player.style.transform = `translateX(${(playerLane - 1) * laneWidth + offset}px)`;
-                setTimeout(() => player.remove(), 300); // Remove after animation
-            });
-        }
 
         openGame1.onclick = function() {
             modal.style.display = 'flex';
@@ -255,10 +199,10 @@
                 ctx.fillRect(enemy.lane * laneWidth + laneWidth / 2 - enemySize / 2, enemy.y, enemySize, enemySize);
                 enemy.y += enemySpeed;
                 if (enemy.y > canvas.height) {
-                    enemies = enemies.filter(e => e !== enemy); // Remove enemy from the array
+                    enemy.y = -enemySize;
+                    enemy.lane = Math.floor(Math.random() * 3);
                     score++;
                     scoreElement.textContent = score;
-                    spawnEnemy(); // Spawn a new enemy when one leaves the screen
                 }
             });
         }
@@ -274,7 +218,6 @@
         function update() {
             if (gameOver) {
                 clearInterval(scoreInterval);
-                clearInterval(spawnInterval);
                 ctx.fillStyle = 'white';
                 ctx.font = '48px serif';
                 ctx.fillText('Game Over', canvas.width / 2 - 120, canvas.height / 2);
@@ -290,32 +233,22 @@
 
         function init() {
             enemies = [];
-            for (let i = 0; i < 2; i++) { // Ensure exactly 2 enemies at start
-                spawnEnemy();
+            for (let i = 0; i < 2; i++) { // Ensure at most 2 enemies at start
+                enemies.push({
+                    lane: Math.floor(Math.random() * 3),
+                    y: -enemySize - (Math.random() * canvas.height)
+                });
             }
             score = 0;
             scoreElement.textContent = score;
             gameOver = false;
-            enemySpeed = 0.5; // Reset speed to slow start
+            enemySpeed = 1;
             update();
             scoreInterval = setInterval(() => {
                 if (!gameOver) {
-                    enemySpeed += 0.05; // Gradually increase speed
+                    enemySpeed += 0.1;
                 }
             }, 1000);
-        }
-
-        function spawnEnemy() {
-            let availableLanes = [0, 1, 2];
-            enemies.forEach(enemy => {
-                availableLanes = availableLanes.filter(lane => lane !== enemy.lane);
-            });
-
-            const newLane = availableLanes[Math.floor(Math.random() * availableLanes.length)];
-            enemies.push({
-                lane: newLane,
-                y: -enemySize
-            });
         }
 
         function startGame() {
@@ -341,14 +274,28 @@
         restartButton.addEventListener('click', restartGame);
 
         function spawnEnemies() {
-            spawnInterval = setInterval(() => {
+            setInterval(() => {
                 if (!gameOver) {
-                    if (enemies.length < 2) {
-                        spawnEnemy(); // Ensure exactly 2 enemies at a time
+                    let lanes = [0, 1, 2];
+                    let numEnemies = Math.floor(Math.random() * 2) + 1; // 1 or 2 enemies
+
+                    enemies = enemies.filter(enemy => enemy.y <= canvas.height); // Remove enemies that passed
+                    let newEnemies = [];
+
+                    for (let i = 0; i < numEnemies; i++) {
+                        if (lanes.length === 0) break;
+                        let laneIndex = Math.floor(Math.random() * lanes.length);
+                        newEnemies.push({
+                            lane: lanes.splice(laneIndex, 1)[0],
+                            y: -enemySize
+                        });
                     }
+                    enemies.push(...newEnemies);
                 }
             }, 2000); // Spawns new enemies every 2 seconds
         }
+
+        spawnEnemies();
     </script>
 </body>
 </html>
