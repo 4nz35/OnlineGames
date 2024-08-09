@@ -103,9 +103,6 @@
 
         #gameCanvas {
             background-color: #000;
-            border: 5px solid #555;
-            border-top-width: 20px;
-            border-radius: 10px;
             position: relative;
         }
 
@@ -113,6 +110,15 @@
             margin: 10px;
             font-size: 1.5em;
             color: #fff;
+            background-color: #007BFF;
+            padding: 10px;
+            border-radius: 10px;
+            position: absolute;
+            top: 20px;
+            width: calc(100% - 40px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .button {
@@ -196,6 +202,10 @@
             font-size: 48px;
             color: white;
             animation: gameOver 0.5s ease;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         @keyframes gameOver {
@@ -225,8 +235,10 @@
     <div id="gameModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <div class="info">Score: <span id="score">0</span></div>
-            <div class="info">High Score: <span id="highScore">0</span></div>
+            <div class="info">
+                <span>Score: <span id="score">0</span></span>
+                <span>High Score: <span id="highScore">0</span></span>
+            </div>
             <canvas id="gameCanvas" width="400" height="600"></canvas>
             <div id="gameOverText" class="game-over" style="display:none;">Game Over</div>
             <button class="button" id="startButton">Start</button>
@@ -275,6 +287,8 @@
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         if (isMobile) {
             touchControls.style.display = 'flex';
+        } else {
+            touchControls.style.display = 'none';
         }
 
         highScoreElement.textContent = highScore;
