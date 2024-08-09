@@ -25,7 +25,8 @@
             font-size: 3em;
             font-weight: bold;
             color: #ffffff;
-            animation: fadeIn 1s ease-out;
+            animation: fadeIn 1.5s ease-out;
+            letter-spacing: 3px;
         }
 
         .game-container {
@@ -38,7 +39,7 @@
         }
 
         .game-tile {
-            background: linear-gradient(145deg, #2c2c2c, #1a1a1a);
+            background: linear-gradient(145deg, #3e3e3e, #1a1a1a);
             box-shadow: 5px 5px 15px #0e0e0e, -5px -5px 15px #2e2e2e;
             height: 200px;
             display: flex;
@@ -51,11 +52,34 @@
             transition: transform 0.3s, box-shadow 0.3s;
             text-decoration: none;
             animation: bounceIn 1.5s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-tile::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%);
+            animation: rotateTile 6s linear infinite;
+            pointer-events: none;
         }
 
         .game-tile:hover {
             transform: translateY(-10px);
             box-shadow: 10px 10px 30px #0e0e0e, -10px -10px 30px #2e2e2e;
+        }
+
+        @keyframes rotateTile {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Modal styles */
@@ -94,6 +118,7 @@
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
+            z-index: 1000;
         }
 
         .close:hover,
@@ -111,18 +136,20 @@
             border-radius: 10px;
             color: #fff;
             font-size: 1.5em;
+            z-index: 10;
+            box-shadow: 0 0 10px #000;
         }
 
         #gameCanvas {
             background-color: #000;
             border-radius: 10px;
-            margin-top: 10px;
+            margin-top: 20px;
         }
 
         .button {
-            margin-top: 10px;
-            padding: 10px 20px;
-            font-size: 1.5em;
+            margin-top: 20px;
+            padding: 8px 16px;
+            font-size: 1.2em;
             background-color: #007BFF;
             color: #fff;
             border: none;
@@ -130,6 +157,7 @@
             cursor: pointer;
             transition: background-color 0.3s;
             font-family: 'Fredoka', sans-serif;
+            z-index: 10;
         }
 
         .button:hover {
@@ -296,10 +324,10 @@
             if (!isMobile) {
                 if ((e.key === 'ArrowLeft' || e.key === 'a') && playerLane > 0) {
                     playerLane--;
-                    movePlayer();
+                    animatePlayer();
                 } else if ((e.key === 'ArrowRight' || e.key === 'd') && playerLane < 2) {
                     playerLane++;
-                    movePlayer();
+                    animatePlayer();
                 }
             }
         });
@@ -307,29 +335,32 @@
         leftControl.addEventListener('click', () => {
             if (playerLane > 0) {
                 playerLane--;
-                movePlayer();
+                animatePlayer();
             }
         });
 
         rightControl.addEventListener('click', () => {
             if (playerLane < 2) {
                 playerLane++;
-                movePlayer();
+                animatePlayer();
             }
         });
 
-        function movePlayer() {
+        function animatePlayer() {
+            moveSound.play();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.save();
             ctx.translate(playerLane * laneWidth, 0);
             drawPlayer();
             drawEnemies();
             ctx.restore();
-            moveSound.play();
         }
 
         openGame1.onclick = function() {
             modal.style.display = 'flex';
+            startButton.style.display = 'block';
+            restartButton.style.display = 'none';
+            gameOverText.style.display = 'none';
         };
 
         closeBtn.onclick = function() {
@@ -433,6 +464,7 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             scoreElement.textContent = 0;
             startButton.style.display = 'block';
+            restartButton.style.display = 'none';
         }
 
         function flashScreen() {
