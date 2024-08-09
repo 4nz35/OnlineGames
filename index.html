@@ -83,6 +83,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            font-family: 'Fredoka', sans-serif;
         }
 
         .close {
@@ -194,7 +195,8 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <div class="info">Score: <span id="score">0</span></div>
-            <canvas id="gameCanvas" width="650" height="450"></canvas>
+            <div class="info">High Score: <span id="highScore">0</span></div>
+            <canvas id="gameCanvas" width="600" height="450"></canvas>
             <button class="button" id="startButton">Start</button>
             <button class="button" id="restartButton" style="display: none;">Restart</button>
 
@@ -215,18 +217,20 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('highScore');
         const touchControls = document.getElementById('touchControls');
         const leftControl = document.getElementById('leftControl');
         const rightControl = document.getElementById('rightControl');
 
         const laneWidth = canvas.width / 3;
         let playerLane = 1; // Start in the middle lane
-        const playerSize = 50;
+        let playerSize = { width: 40, height: 80 }; // Adjust player size
         const enemySize = 50;
         let enemies = [];
         let enemySpeed = 0.5; // Slower start
         let gameOver = false;
         let score = 0;
+        let highScore = localStorage.getItem('highScore') || 0; // Store high score
         let scoreInterval;
         let spawnInterval;
 
@@ -235,6 +239,8 @@
         if (isMobile) {
             touchControls.style.display = 'flex';
         }
+
+        highScoreElement.textContent = highScore;
 
         document.addEventListener('keydown', (e) => {
             if (!isMobile) {
@@ -272,8 +278,8 @@
 
         function drawPlayer() {
             ctx.fillStyle = 'green';
-            ctx.clearRect(playerLane * laneWidth, canvas.height - playerSize - 10, laneWidth, playerSize); // Clear previous position
-            ctx.fillRect(playerLane * laneWidth + laneWidth / 2 - playerSize / 2, canvas.height - playerSize - 10, playerSize, playerSize);
+            ctx.clearRect(playerLane * laneWidth, canvas.height - playerSize.height - 10, laneWidth, playerSize.height); // Clear previous position
+            ctx.fillRect(playerLane * laneWidth + laneWidth / 2 - playerSize.width / 2, canvas.height - playerSize.height - 10, playerSize.width, playerSize.height);
         }
 
         function drawEnemies() {
@@ -283,8 +289,6 @@
                 enemy.y += enemySpeed;
                 if (enemy.y > canvas.height) {
                     enemies = enemies.filter(e => e !== enemy); // Remove enemy from the array
-                    score++;
-                    scoreElement.textContent = score;
                     spawnEnemy(); // Spawn a new enemy when one leaves the screen
                 }
             });
@@ -292,8 +296,9 @@
 
         function checkCollisions() {
             enemies.forEach(enemy => {
-                if (enemy.lane === playerLane && enemy.y + enemySize > canvas.height - playerSize - 10 && enemy.y < canvas.height - 10) {
+                if (enemy.lane === playerLane && enemy.y + enemySize > canvas.height - playerSize.height - 10 && enemy.y < canvas.height - 10) {
                     gameOver = true;
+                    flashScreen(); // Add flash effect on collision
                 }
             });
         }
@@ -303,9 +308,15 @@
                 clearInterval(scoreInterval);
                 clearInterval(spawnInterval);
                 ctx.fillStyle = 'white';
-                ctx.font = '48px serif';
+                ctx.font = '48px Fredoka, sans-serif';
                 ctx.fillText('Game Over', canvas.width / 2 - 120, canvas.height / 2);
                 restartButton.style.display = 'block';
+
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('highScore', highScore);
+                    highScoreElement.textContent = highScore;
+                }
                 return;
             }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -327,6 +338,8 @@
             update();
             scoreInterval = setInterval(() => {
                 if (!gameOver) {
+                    score++;
+                    scoreElement.textContent = score;
                     enemySpeed += 0.05; // Gradually increase speed
                 }
             }, 1000);
@@ -363,6 +376,13 @@
             scoreElement.textContent = 0;
             startButton.style.display = 'block';
             restartButton.style.display = 'none';
+        }
+
+        function flashScreen() {
+            document.body.style.backgroundColor = 'white';
+            setTimeout(() => {
+                document.body.style.backgroundColor = '#1a1a1a';
+            }, 100);
         }
 
         startButton.addEventListener('click', startGame);
