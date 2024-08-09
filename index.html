@@ -103,7 +103,10 @@
 
         #gameCanvas {
             background-color: #000;
+            border: 5px solid #555;
+            border-top-width: 20px;
             border-radius: 10px;
+            position: relative;
         }
 
         .info {
@@ -113,7 +116,7 @@
         }
 
         .button {
-            margin-top: 20px;
+            margin-top: 10px;
             padding: 10px 20px;
             font-size: 1.5em;
             background-color: #007BFF;
@@ -122,9 +125,6 @@
             border-radius: 10px;
             cursor: pointer;
             transition: background-color 0.3s;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
             font-family: 'Fredoka', sans-serif;
         }
 
@@ -188,7 +188,27 @@
         }
 
         .player {
-            animation: playerMove 0.3s ease-out forwards;
+            transition: transform 0.3s ease;
+        }
+
+        /* Game Over Animation */
+        .game-over {
+            font-size: 48px;
+            color: white;
+            animation: gameOver 0.5s ease;
+        }
+
+        @keyframes gameOver {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.5);
+                color: red;
+            }
+            100% {
+                transform: scale(1);
+            }
         }
     </style>
 </head>
@@ -208,6 +228,7 @@
             <div class="info">Score: <span id="score">0</span></div>
             <div class="info">High Score: <span id="highScore">0</span></div>
             <canvas id="gameCanvas" width="400" height="600"></canvas>
+            <div id="gameOverText" class="game-over" style="display:none;">Game Over</div>
             <button class="button" id="startButton">Start</button>
             <button class="button" id="restartButton" style="display: none;">Restart</button>
 
@@ -225,6 +246,7 @@
         const closeBtn = document.getElementsByClassName('close')[0];
         const startButton = document.getElementById('startButton');
         const restartButton = document.getElementById('restartButton');
+        const gameOverText = document.getElementById('gameOverText');
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
@@ -232,6 +254,10 @@
         const touchControls = document.getElementById('touchControls');
         const leftControl = document.getElementById('leftControl');
         const rightControl = document.getElementById('rightControl');
+
+        const moveSound = new Audio('https://freesound.org/data/previews/233/233269_4019022-lq.mp3');
+        const collisionSound = new Audio('https://freesound.org/data/previews/341/341695_6244188-lq.mp3');
+        const gameOverSound = new Audio('https://freesound.org/data/previews/171/171671_2437357-lq.mp3');
 
         const laneWidth = canvas.width / 3;
         const playerSize = 50; // Player is square
@@ -282,6 +308,8 @@
         function movePlayer() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawPlayer();
+            drawEnemies();
+            moveSound.play();
         }
 
         openGame1.onclick = function() {
@@ -303,6 +331,7 @@
         function drawPlayer() {
             ctx.fillStyle = 'green';
             ctx.fillRect(playerLane * laneWidth + laneWidth / 2 - playerSize / 2, canvas.height - playerSize - 10, playerSize, playerSize);
+            ctx.save();
         }
 
         function drawEnemies() {
@@ -321,27 +350,16 @@
             enemies.forEach(enemy => {
                 if (enemy.lane === playerLane && enemy.y + enemySize > canvas.height - playerSize - 10 && enemy.y < canvas.height - 10) {
                     gameOver = true;
+                    collisionSound.play();
                     flashScreen(); // Add flash effect on collision
+                    endGame();
                 }
             });
         }
 
         function update() {
-            if (gameOver) {
-                clearInterval(scoreInterval);
-                clearInterval(spawnInterval);
-                ctx.fillStyle = 'white';
-                ctx.font = '48px Fredoka, sans-serif';
-                ctx.fillText('Game Over', canvas.width / 2 - 120, canvas.height / 2);
-                restartButton.style.display = 'block';
+            if (gameOver) return;
 
-                if (score > highScore) {
-                    highScore = score;
-                    localStorage.setItem('highScore', highScore);
-                    highScoreElement.textContent = highScore;
-                }
-                return;
-            }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawPlayer();
             drawEnemies();
@@ -351,6 +369,8 @@
 
         function init() {
             enemies = [];
+            gameOverText.style.display = 'none';
+            restartButton.style.display = 'none';
             for (let i = 0; i < 2; i++) { // Ensure exactly 2 enemies at start
                 spawnEnemy();
             }
@@ -398,7 +418,6 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             scoreElement.textContent = 0;
             startButton.style.display = 'block';
-            restartButton.style.display = 'none';
         }
 
         function flashScreen() {
@@ -406,6 +425,20 @@
             setTimeout(() => {
                 document.body.style.backgroundColor = '#1a1a1a';
             }, 100);
+        }
+
+        function endGame() {
+            clearInterval(scoreInterval);
+            clearInterval(spawnInterval);
+            gameOverSound.play();
+            gameOverText.style.display = 'block';
+            restartButton.style.display = 'block';
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+                highScoreElement.textContent = highScore;
+            }
         }
 
         startButton.addEventListener('click', startGame);
